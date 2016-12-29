@@ -1,0 +1,7 @@
+*.sdf
+*.suo
+*.log
+.vs/
+x64/
+Debug/
+
