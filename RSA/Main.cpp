@@ -61,6 +61,18 @@ unsigned long Decrypt(PrivateKey sk, unsigned long c)
 	return l % sk.n;
 }
  
+unsigned long Encrypt(PrivateKey sk, unsigned long n)
+{
+	unsigned long l = (unsigned long)powl(n, sk.d);
+	return l % sk.n;
+}
+
+unsigned long Decrypt(PublicKey pk, unsigned long c)
+{
+	unsigned long l = (unsigned long)powl(c, pk.e);
+	return l % pk.n;
+}
+
 //本实例只是研究RSA原理。
 int main()
 {
@@ -81,6 +93,12 @@ int main()
 	unsigned long pm = 7;
 	unsigned long sm = Encrypt(pKey, pm);
 	unsigned long apm = Decrypt(sKey, sm);
+
+	//模拟加密解密过程 - 反过来加密不成立。
+	//unsigned long pm1 = 9;
+	//unsigned long sm1 = Encrypt(sKey, pm1);
+	//unsigned long apm1 = Decrypt(pKey, sm1);
+
 
 	return 0;
 }
