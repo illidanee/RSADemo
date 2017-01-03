@@ -77,27 +77,27 @@ unsigned long Decrypt(PublicKey pk, unsigned long c)
 int main()
 {
 	//计算公匙和私匙
-	unsigned long p = ComputePrime(3, 10);
-	unsigned long q = ComputePrime(p + 1, 10);
+	unsigned long p = 3; //ComputePrime(3, 10);
+	unsigned long q = 11; //ComputePrime(p + 1, 10);
 
 	unsigned long n = p * q;
 	unsigned long on = (p - 1) * (q - 1);
 
-	unsigned long e = ComputePrime(11, 20);
+	unsigned long e = 7; //ComputePrime(11, 20); //1 < e < on;
 	unsigned long d = ComputeMod(2, 100, e, on);
 
  	PublicKey pKey = { n, e };
 	PrivateKey sKey = { n, d };
 
 	//模拟加密解密过程
-	unsigned long pm = 7;
+	unsigned long pm = 20;
 	unsigned long sm = Encrypt(pKey, pm);
 	unsigned long apm = Decrypt(sKey, sm);
 
-	//模拟加密解密过程 - 反过来加密不成立。
-	//unsigned long pm1 = 9;
-	//unsigned long sm1 = Encrypt(sKey, pm1);
-	//unsigned long apm1 = Decrypt(pKey, sm1);
+	//模拟签名认证过程
+	unsigned long pm1 = 30;
+	unsigned long sm1 = Encrypt(sKey, pm1);
+	unsigned long apm1 = Decrypt(pKey, sm1);
 
 
 	return 0;
