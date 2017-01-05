@@ -2,8 +2,11 @@
 #include "rsa.h"
 #include "hex.h"
 #include "files.h"
+#include "modes.h"
 #include "randpool.h"
 
+
+#include <windows.h>
 using namespace std;
 using namespace CryptoPP;
 
@@ -43,16 +46,58 @@ string RSADecryptString(const char *privFilename, const char *ciphertext, Random
 	return result;
 }
 
+namespace { OFB_Mode<AES>::Encryption s_globalRNG; }
+RandomNumberGenerator & GlobalRNG()
+{
+	return dynamic_cast<RandomNumberGenerator&>(s_globalRNG);
+}
+
+string RSASignFile(const char *privFilename, const char *messageFilename, const char *signatureFilename, RandomPool& randPool)
+{
+	string result;
+	string ss = messageFilename;
+	FileSource privFile(privFilename, true, new HexDecoder);
+	RSASS<PKCS1v15, SHA>::Signer priv(privFile);
+	StringSource(ss, true, new SignerFilter(randPool, priv, new HexEncoder(new StringSink(result))));
+	return result;
+
+}
+
+bool RSAVerifyFile(const char *pubFilename, const char *messageFilename, const char *signatureFlag, RandomPool& randPool)
+{
+	FileSource pubFile(pubFilename, true, new HexDecoder);
+	RSASS<PKCS1v15, SHA>::Verifier pub(pubFile);
+
+	StringSource signatureFile(signatureFlag, true, new HexDecoder);
+	if (signatureFile.MaxRetrievable() != pub.SignatureLength())
+		return false;
+	SecByteBlock signature(pub.SignatureLength());
+	signatureFile.Get(signature, signature.size());
+
+	VerifierFilter *verifierFilter = new VerifierFilter(pub);
+	verifierFilter->Put(signature, pub.SignatureLength());
+	StringSource f(messageFilename, true, verifierFilter);
+
+	return verifierFilter->GetLastResult();
+}
+
 int main()
 {
 	RandomPool randPool;
 	const char* seed = "illidan.org";
 	randPool.Put((byte *)seed, strlen(seed));
 
+	RandomPool randPool1;
+	const char* seed1 = "illidan.org111";
+	randPool1.Put((byte *)seed1, strlen(seed1));
+
 	GenerateRSAKey(2048, "PrivateKey.key", "PublicKey.key", randPool);
 
 	string c = RSAEncryptString("PublicKey.key", "ÄãºÃ°¡°¡  ¹þ¹þ¹þ£¡", randPool);
 	string m = RSADecryptString("PrivateKey.key", c.c_str(), randPool);
+	
+	string c1 = RSASignFile("PrivateKey.key", "ÄãºÃ°¡£¡adfqasd", "", randPool);
+	bool r = RSAVerifyFile("PublicKey.key", "ÄãºÃ°¡£¡adfqasd", c1.c_str(), randPool1);
 
 	return 0;
 }
